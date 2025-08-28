@@ -5,11 +5,11 @@
   
 -- src/TaipeiOn/Message.hs
 module TaipeiOn.Message
-    ( Message
-    , MessageSource
-    , MessageEvent
-    , WebhookPayload
-    , ChannelMessagePayload
+    ( Message(..)
+    , MessageSource(..)
+    , MessageEvent(..)
+    , WebhookPayload(..)
+    , ChannelMessagePayload(..)
     , mkMessage
     , mkBroadcastMessage
     , mkPrivateMessage
