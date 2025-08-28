@@ -2,14 +2,17 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-
+  
 -- src/TaipeiOn/Message.hs
 module TaipeiOn.Message
-    ( Message,
-      MessageSource,
-      MessageEvent,
-      WebhookPayload,
-      ChannelMessagePayload
+    ( Message
+    , MessageSource
+    , MessageEvent
+    , WebhookPayload
+    , ChannelMessagePayload
+    , mkMessage
+    , mkBroadcastMessage
+    , mkPrivateMessage
     ) where
 
 import Data.Aeson
@@ -81,15 +84,51 @@ instance FromJSON WebhookPayload where
 instance ToJSON Message where
     toJSON :: Message -> Value
     toJSON Message{..} =
-        object  [  "id" .= msgId
-                ,  "type" .= msgType
-                ,  "text" .= msgText
-                ]
+        object $ filter notEmpty  [  "id" .= msgId
+                                  ,  "type" .= msgType
+                                  ,  "text" .= msgText
+                                  ]
+                where 
+                  notEmpty (_, v) = not (isEmpty v)
+
+                  isEmpty (String s) = s == ""
+                  isEmpty (Array  a) = null a
+                  isEmpty Null       = True
+                  isEmpty _          = False
 
 instance ToJSON ChannelMessagePayload where
     toJSON :: ChannelMessagePayload -> Value
     toJSON ChannelMessagePayload{..} =
-        object  [  "ask" .= cmpAsk
-                ,  "recipient" .= cmpRecipient
-                ,  "message" .= cmpMessage
-                ]
+        object $ filter notEmpty [  "ask" .= cmpAsk
+                                  , "recipient" .= cmpRecipient
+                                  , "message" .= cmpMessage
+                                  ]
+                where 
+                  notEmpty (_, v) = not (isEmpty v)
+
+                  isEmpty (String s) = s == ""
+                  isEmpty (Array  a) = null a
+                  isEmpty Null       = True
+                  isEmpty _          = False
+
+
+-- Factory
+
+-- Message to send
+mkMessage :: Text -> Text -> Message
+mkMessage msgType msgText = Message { msgType = msgType
+                                    , msgId = ""
+                                    , msgText = msgText }
+
+mkBroadcastMessage :: Message -> ChannelMessagePayload
+mkBroadcastMessage msg = ChannelMessagePayload  { cmpAsk = "broadcastMessage"
+                                                , cmpRecipient = ""
+                                                , cmpMessage = msg 
+                                                }
+
+mkPrivateMessage :: Text -> Message -> ChannelMessagePayload
+mkPrivateMessage recipient msg = ChannelMessagePayload  
+                                    { cmpAsk = "sendMessage"
+                                    , cmpRecipient = recipient
+                                    , cmpMessage = msg 
+                                    }
