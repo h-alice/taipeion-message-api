@@ -12,11 +12,14 @@ module TaipeiOn.Message
     , AudioMessage(..)
     , FileMessage(..)
     , MessageObject(..)
+    , ApiPayload(..)
     , mkTextMessage
     , mkImageMessage
     , mkVideoMessage
     , mkAudioMessage
     , mkFileMessage
+    , mkBroadcastMessage
+    , mkPrivateMessage
     ) where
 
 import Data.Aeson
@@ -202,7 +205,7 @@ mkVideoMessage
   -> VideoMessage
 mkVideoMessage = VideoMessage
 
--- | Constructs an AudioMessage.
+-- | Constructs an 'AudioMessage'.
 --
 -- Arguments:
 --
@@ -216,7 +219,7 @@ mkAudioMessage
   -> AudioMessage
 mkAudioMessage = AudioMessage
 
--- | Constructs a FileMessage.
+-- | Constructs a 'FileMessage'.
 --
 -- Arguments:
 --
@@ -230,3 +233,26 @@ mkFileMessage
   -> FileMessage
 mkFileMessage = FileMessage
 
+-- | Constructs a 'BroadcastMessage'
+--
+-- Arguments:
+--
+-- * @MessageObject@:   Message to send
+mkBroadcastMessage :: MessageObject -> ApiPayload
+mkBroadcastMessage msg = ApiPayload { apiAsk = "broadcastMessage"
+                                    , apiRecipient = ""
+                                    , apiMessage = msg 
+                                    }
+
+-- | Constructs a 'PrivateMessage'
+--
+-- Arguments:
+--
+-- * @Text@:            The message recipient
+-- * @MessageObject@:   Message to send
+mkPrivateMessage :: Text -> MessageObject -> ApiPayload
+mkPrivateMessage recipient msg = ApiPayload  
+                                    { apiAsk = "sendMessage"
+                                    , apiRecipient = recipient
+                                    , apiMessage = msg 
+                                    }
