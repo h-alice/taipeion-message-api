@@ -174,8 +174,8 @@ instance ToJSON ApiPayload where
 -- * @Text@:       The message text
 mkTextMessage 
   :: Text   -- ^ The message
-  -> TextMessage
-mkTextMessage = TextMessage
+  -> MessageObject
+mkTextMessage msg = TextMsg (TextMessage { txtText = msg })
 
 -- | Constructs an 'ImageMessage'.
 --
@@ -188,8 +188,12 @@ mkImageMessage
   :: Maybe Text  
   -> Text        
   -> Text       
-  -> ImageMessage
-mkImageMessage = ImageMessage
+  -> MessageObject
+mkImageMessage optMsg fileName fileID 
+  = ImageMsg $ ImageMessage { imgText = optMsg
+                            , imgShowFileName = fileName
+                            , imgFileID = fileID
+                            }
 
 -- | Constructs a 'VideoMessage'.
 --
@@ -202,8 +206,12 @@ mkVideoMessage
   :: Maybe Text -- ^ Optional text message
   -> Text       -- ^ File name
   -> Text       -- ^ File ID
-  -> VideoMessage
-mkVideoMessage = VideoMessage
+  -> MessageObject
+mkVideoMessage optMsg fileName fileID 
+  = VideoMsg $ VideoMessage { vidText = optMsg
+                            , vidShowFileName = fileName
+                            , vidFileID = fileID
+                            }
 
 -- | Constructs an 'AudioMessage'.
 --
@@ -216,8 +224,12 @@ mkAudioMessage
   :: Maybe Text 
   -> Text 
   -> Text 
-  -> AudioMessage
-mkAudioMessage = AudioMessage
+  -> MessageObject
+mkAudioMessage optMsg fileName fileID 
+  = AudioMsg $ AudioMessage { audText = optMsg
+                            , audShowFileName = fileName
+                            , audFileID = fileID
+                            }
 
 -- | Constructs a 'FileMessage'.
 --
@@ -230,8 +242,12 @@ mkFileMessage
   :: Maybe Text 
   -> Text 
   -> Text 
-  -> FileMessage
-mkFileMessage = FileMessage
+  -> MessageObject
+mkFileMessage optMsg fileName fileID 
+  = FileMsg $ FileMessage { filText = optMsg
+                          , filShowFileName = fileName
+                          , filFileID = fileID
+                          }
 
 -- | Constructs a 'BroadcastMessage'
 --
@@ -256,3 +272,6 @@ mkPrivateMessage recipient msg = ApiPayload
                                     , apiRecipient = recipient
                                     , apiMessage = msg 
                                     }
+
+test :: Text -> ApiPayload
+test t = mkBroadcastMessage (mkTextMessage t)
