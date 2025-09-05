@@ -1,26 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
--- test/LibSpec.hs
 module TaipeiOnApiPayloadSpec (spec) where
-
 import Test.Hspec
 import qualified TaipeiOn.Webhook.Event as WE
-
-import Control.Monad.IO.Class (MonadIO(liftIO))
-import Control.Applicative (liftA)
-import Data.Aeson ( encode )
 import Data.Aeson.Decoding ( eitherDecodeStrict )
-import Data.Text.Lazy.Encoding as TL ( decodeUtf8 )
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as TL
-
-
 import Text.RawString.QQ
 import qualified Data.Text.Encoding as T
-import Data.Either (fromRight)
-
-
 
 spec :: Spec
 spec = do
