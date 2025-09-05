@@ -76,6 +76,13 @@ data MessageObject
   | FileMsg  FileMessage
   deriving (Show, Eq)
 
+data ApiPayload = ApiPayload
+  { apiAsk       :: Text,
+    apiRecipient :: Text,
+    apiMessage   :: MessageObject
+  }
+  deriving (Show, Eq, Generic)
+
 -- Helper function to filter out fields with empty/null values from JSON objects.
 -- This style is adopted from the provided Message.hs file.
 notEmpty :: (Key, Value) -> Bool
@@ -148,6 +155,15 @@ instance ToJSON MessageObject where
     toJSON (AudioMsg msg)  = toJSON msg
     toJSON (FileMsg  msg)  = toJSON msg
 
+
+instance ToJSON ApiPayload where
+    toJSON :: ApiPayload -> Value
+    toJSON ApiPayload{..} =
+        object $ filter notEmpty
+            [ "ask"       .= apiAsk
+            , "recipient" .= apiRecipient
+            , "message"   .= apiMessage
+            ]
 -- | Constructs a 'TextMessage'.
 --
 -- Arguments:
