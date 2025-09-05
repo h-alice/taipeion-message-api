@@ -272,6 +272,3 @@ mkPrivateMessage recipient msg = ApiPayload
                                     , apiRecipient = recipient
                                     , apiMessage = msg 
                                     }
-
-test :: Text -> ApiPayload
-test t = mkBroadcastMessage (mkTextMessage t)
