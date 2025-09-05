@@ -2,133 +2,215 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-  
--- src/TaipeiOn/Message.hs
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
+
 module TaipeiOn.Message
-    ( Message(..)
-    , MessageSource(..)
-    , MessageEvent(..)
-    , WebhookPayload(..)
-    , ChannelMessagePayload(..)
-    , mkMessage
-    , mkBroadcastMessage
-    , mkPrivateMessage
+    ( TextMessage(..)
+    , ImageMessage(..)
+    , VideoMessage(..)
+    , AudioMessage(..)
+    , FileMessage(..)
+    , MessageObject(..)
+    , mkTextMessage
+    , mkImageMessage
+    , mkVideoMessage
+    , mkAudioMessage
+    , mkFileMessage
     ) where
 
 import Data.Aeson
-import Data.Aeson.Types (Parser)
 import GHC.Generics
 import Data.Text (Text)
 
-data Message = Message
-  { msgType :: Text,
-    msgId   :: Text,
-    msgText :: Text
+-- | Represents a text message object.
+--   Corresponds to section 2.1 of the API specification.
+data TextMessage = TextMessage
+  { txtText :: Text
   }
   deriving (Show, Eq, Generic)
 
-data MessageSource = MessageSource
-  { msType   :: Text,
-    msUserId :: Text
+-- | Represents an image message object.
+--   Corresponds to section 2.2 of the API specification.
+data ImageMessage = ImageMessage
+  { imgText         :: Maybe Text -- ^ Optional text content
+  , imgShowFileName :: Text       -- ^ File name
+  , imgFileID       :: Text       -- ^ File ID
   }
   deriving (Show, Eq, Generic)
 
-data MessageEvent = MessageEvent
-  { mevType      :: Text,
-    mevTimestamp :: Int,
-    mevSource    :: MessageSource,
-    mevMessage   :: Message
+-- | Represents a video message object.
+--   Corresponds to section 2.3 of the API specification.
+data VideoMessage = VideoMessage
+  { vidText         :: Maybe Text -- Optional text content
+  , vidShowFileName :: Text
+  , vidFileID       :: Text
   }
   deriving (Show, Eq, Generic)
 
-data WebhookPayload = WebhookPayload
-  { wpDestination :: Int,
-    wpEvents      :: [MessageEvent]
+-- | Represents an audio message object.
+--   Corresponds to section 2.4 of the API specification.
+data AudioMessage = AudioMessage
+  { audText         :: Maybe Text -- Optional text content
+  , audShowFileName :: Text
+  , audFileID       :: Text
   }
   deriving (Show, Eq, Generic)
 
-data ChannelMessagePayload = ChannelMessagePayload
-  { cmpAsk       :: Text,
-    cmpRecipient :: Text,
-    cmpMessage   :: Message
+-- | Represents a generic file message object.
+--   Corresponds to section 2.5 of the API specification.
+data FileMessage = FileMessage
+  { filText         :: Maybe Text -- Optional text content
+  , filShowFileName :: Text
+  , filFileID       :: Text
   }
   deriving (Show, Eq, Generic)
 
-instance FromJSON Message where
-    parseJSON :: Value -> Parser Message
-    parseJSON = withObject "Message" $ \v -> Message
-        <$> v .:  "type" 
-        <*> v .:? "id"    .!= ""
-        <*> v .:? "text"  .!= ""
+-- | A sum type that represents any possible message object.
+--   This allows for polymorphic handling of different message types.
+data MessageObject
+  = TextMsg  TextMessage
+  | ImageMsg ImageMessage
+  | VideoMsg VideoMessage
+  | AudioMsg AudioMessage
+  | FileMsg  FileMessage
+  deriving (Show, Eq)
 
-instance FromJSON MessageSource where
-    parseJSON :: Value -> Parser MessageSource
-    parseJSON = withObject "MessageSource" $ \v -> MessageSource
-        <$> v .: "type"
-        <*> v .: "userId"
+-- Helper function to filter out fields with empty/null values from JSON objects.
+-- This style is adopted from the provided Message.hs file.
+notEmpty :: (Key, Value) -> Bool
+notEmpty (_, v) = not (isEmpty v)
+  where
+    isEmpty :: Value -> Bool
+    isEmpty (String s) = s == ""
+    isEmpty (Array  a) = null a
+    isEmpty Null       = True
+    isEmpty _          = False
 
-instance FromJSON MessageEvent where
-    parseJSON :: Value -> Parser MessageEvent
-    parseJSON = withObject "MessageEvent" $ \v -> MessageEvent
-        <$> v .: "type"
-        <*> v .: "timestamp"
-        <*> v .: "source"
-        <*> v .: "message"
+--
+-- ToJSON Instances
+--
 
-instance FromJSON WebhookPayload where
-    parseJSON :: Value -> Parser WebhookPayload
-    parseJSON = withObject "WebhookPayload" $ \v -> WebhookPayload
-        <$> v .: "destination"
-        <*> v .: "events"
+instance ToJSON TextMessage where
+    toJSON :: TextMessage -> Value
+    toJSON TextMessage{..} =
+        object  [ "type" .= ("text" :: Text)
+                , "text" .= txtText
+                ]
 
-instance ToJSON Message where
-    toJSON :: Message -> Value
-    toJSON Message{..} =
-        object $ filter notEmpty  [  "id" .= msgId
-                                  ,  "type" .= msgType
-                                  ,  "text" .= msgText
-                                  ]
-                where 
-                  notEmpty (_, v) = not (isEmpty v)
+instance ToJSON ImageMessage where
+    toJSON :: ImageMessage -> Value
+    toJSON ImageMessage{..} =
+        object $ filter notEmpty
+            [ "type"         .= ("image" :: Text)
+            , "text"         .= imgText
+            , "showFileName" .= imgShowFileName
+            , "fileID"       .= imgFileID
+            ]
 
-                  isEmpty (String s) = s == ""
-                  isEmpty (Array  a) = null a
-                  isEmpty Null       = True
-                  isEmpty _          = False
+instance ToJSON VideoMessage where
+    toJSON :: VideoMessage -> Value
+    toJSON VideoMessage{..} =
+        object $ filter notEmpty
+            [ "type"         .= ("video" :: Text)
+            , "text"         .= vidText
+            , "showFileName" .= vidShowFileName
+            , "fileID"       .= vidFileID
+            ]
 
-instance ToJSON ChannelMessagePayload where
-    toJSON :: ChannelMessagePayload -> Value
-    toJSON ChannelMessagePayload{..} =
-        object $ filter notEmpty [  "ask" .= cmpAsk
-                                  , "recipient" .= cmpRecipient
-                                  , "message" .= cmpMessage
-                                  ]
-                where 
-                  notEmpty (_, v) = not (isEmpty v)
+instance ToJSON AudioMessage where
+    toJSON :: AudioMessage -> Value
+    toJSON AudioMessage{..} =
+        object $ filter notEmpty
+            [ "type"         .= ("audio" :: Text)
+            , "text"         .= audText
+            , "showFileName" .= audShowFileName
+            , "fileID"       .= audFileID
+            ]
 
-                  isEmpty (String s) = s == ""
-                  isEmpty (Array  a) = null a
-                  isEmpty Null       = True
-                  isEmpty _          = False
+instance ToJSON FileMessage where
+    toJSON :: FileMessage -> Value
+    toJSON FileMessage{..} =
+        object $ filter notEmpty
+            [ "type"         .= ("file" :: Text)
+            , "text"         .= filText
+            , "showFileName" .= filShowFileName
+            , "fileID"       .= filFileID
+            ]
 
+-- | The ToJSON instance for the polymorphic wrapper.
+--   Delegates serialization to the specific message type's instance.
+instance ToJSON MessageObject where
+    toJSON :: MessageObject -> Value
+    toJSON (TextMsg  msg)  = toJSON msg
+    toJSON (ImageMsg msg)  = toJSON msg
+    toJSON (VideoMsg msg)  = toJSON msg
+    toJSON (AudioMsg msg)  = toJSON msg
+    toJSON (FileMsg  msg)  = toJSON msg
 
--- Factory
+-- | Constructs a 'TextMessage'.
+--
+-- Arguments:
+--
+-- * @Text@:       The message text
+mkTextMessage 
+  :: Text   -- ^ The message
+  -> TextMessage
+mkTextMessage = TextMessage
 
--- Message to send
-mkMessage :: Text -> Text -> Message
-mkMessage msgType msgText = Message { msgType = msgType
-                                    , msgId = ""
-                                    , msgText = msgText }
+-- | Constructs an 'ImageMessage'.
+--
+-- Arguments:
+--
+-- * @Maybe Text@: An optional text message (unsupported in API v1.6)
+-- * @Text@:       The display file name
+-- * @Text@:       The image file ID
+mkImageMessage
+  :: Maybe Text  
+  -> Text        
+  -> Text       
+  -> ImageMessage
+mkImageMessage = ImageMessage
 
-mkBroadcastMessage :: Message -> ChannelMessagePayload
-mkBroadcastMessage msg = ChannelMessagePayload  { cmpAsk = "broadcastMessage"
-                                                , cmpRecipient = ""
-                                                , cmpMessage = msg 
-                                                }
+-- | Constructs a 'VideoMessage'.
+--
+-- Arguments:
+--
+-- * @Maybe Text@:  An optional text message (unsupported in API v1.6)
+-- * @Text@:        The display file name
+-- * @Text@:        The video file ID
+mkVideoMessage 
+  :: Maybe Text -- ^ Optional text message
+  -> Text       -- ^ File name
+  -> Text       -- ^ File ID
+  -> VideoMessage
+mkVideoMessage = VideoMessage
 
-mkPrivateMessage :: Text -> Message -> ChannelMessagePayload
-mkPrivateMessage recipient msg = ChannelMessagePayload  
-                                    { cmpAsk = "sendMessage"
-                                    , cmpRecipient = recipient
-                                    , cmpMessage = msg 
-                                    }
+-- | Constructs an AudioMessage.
+--
+-- Arguments:
+--
+-- * @Maybe Text@:  An optional text message (unsupported in API v1.6)
+-- * @Text@:        The display file name
+-- * @Text@:        The audio file ID
+mkAudioMessage 
+  :: Maybe Text 
+  -> Text 
+  -> Text 
+  -> AudioMessage
+mkAudioMessage = AudioMessage
+
+-- | Constructs a FileMessage.
+--
+-- Arguments:
+--
+-- * @Maybe Text@:  An optional text message (unsupported in API v1.6)
+-- * @Text@:        The display file name
+-- * @Text@:        The file ID
+mkFileMessage 
+  :: Maybe Text 
+  -> Text 
+  -> Text 
+  -> FileMessage
+mkFileMessage = FileMessage
+
