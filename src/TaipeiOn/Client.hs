@@ -20,10 +20,11 @@ import TaipeiOn.Message
 import GHC.Generics
 import Data.Text
 import qualified Data.Text.Encoding as TE
-import Data.Map
+import qualified Data.Set as Set
 import Data.ByteString (ByteString)
 
 import Network.HTTP.Types.Header (HeaderName)
+import Network.HTTP.Client.Conduit (Request(redactHeaders))
 
 -- | Describes a channel.
 --
@@ -61,12 +62,14 @@ mkTpoRequest req action =
         { method = "POST"
         , requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkBroadcastMessage msg
+        , redactHeaders = Set.fromList ["Authorization", "Ocp-Apim-Subscription-Key"]
         }
     WriteChannelPrivate chan recipient msg -> 
       req 
         { method = "POST"
         , requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
+        , redactHeaders = Set.fromList ["Authorization", "Ocp-Apim-Subscription-Key"]
         }
 
 tpoClient :: String -> Action -> IO(Either String String)
