@@ -75,20 +75,16 @@ mkTpoRequest req action =
 tpoClient :: String -> Action -> IO(Either String String)
 tpoClient endPoint action = do
   
+  -- Setup HTTP connection manager
   manager <- newManager tlsManagerSettings
 
+  -- Initialize request
   vanillaReq <- parseRequest endPoint
 
-  putStrLn "--- Vanilla Request ---"
-  putStrLn $ show vanillaReq
-
-
+  -- Create actual request
   let req = mkTpoRequest vanillaReq action
-  
-  putStrLn "--- Final Request ---"
-  putStrLn $ show req
 
-  putStrLn "--- Sending Request ---"
+  -- Send request
   resp <- httpLbs req manager
 
   putStrLn $ show resp
