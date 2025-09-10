@@ -25,6 +25,10 @@ dependencies:
 - bytestring
 - text
 - hspec
+- raw-strings-qq
+- containers
+- http-conduit
+- http-types
 
 ghc-options:
 - -Wall
