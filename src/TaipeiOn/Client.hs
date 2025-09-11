@@ -1,11 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
-
-
 
 -- src/TaipeiOn/Webhook/Event.hs
 module TaipeiOn.Client
@@ -14,17 +10,27 @@ module TaipeiOn.Client
     , tpoClient
     ) where
 
+import TaipeiOn.Response 
+
 import qualified Data.Aeson as AE ( encode )
 import Network.HTTP.Conduit
+    ( tlsManagerSettings,
+      parseRequest,
+      Request(requestBody, method, requestHeaders),
+      newManager,
+      RequestBody(RequestBodyLBS),
+      httpLbs )
 import TaipeiOn.Message
-import GHC.Generics
-import Data.Text
+    ( mkBroadcastMessage, mkPrivateMessage, MessageObject )
+import GHC.Generics ( Generic )
+import Data.Text ( Text )
 import qualified Data.Text.Encoding as TE
 import qualified Data.Set as Set
 import Data.ByteString (ByteString)
 
 import Network.HTTP.Types.Header (HeaderName)
 import Network.HTTP.Client.Conduit (Request(redactHeaders))
+
 
 -- | Describes a channel.
 --
@@ -72,7 +78,7 @@ mkTpoRequest req action =
         , redactHeaders = Set.fromList ["Authorization", "Ocp-Apim-Subscription-Key"]
         }
 
-tpoClient :: String -> Action -> IO(Either String String)
+tpoClient :: String -> Action -> IO TpoResponse
 tpoClient endPoint action = do
   
   -- Setup HTTP connection manager
@@ -87,6 +93,6 @@ tpoClient endPoint action = do
   -- Send request
   resp <- httpLbs req manager
 
-  putStrLn $ show resp
-
-  pure $ Right ""
+  case action of
+    WriteChannelBroadcast {} -> pure $ decodeMessageResponse resp
+    WriteChannelPrivate {} -> pure $ decodeMessageResponse resp
