@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
   
@@ -20,9 +19,13 @@ module TaipeiOn.Webhook.Event
     , PreviewImage(..)
     ) where
 
-import Data.Aeson
-import Data.Aeson.Types (Parser, withObject)
-import GHC.Generics
+import Data.Aeson ( withObject
+                  , (.:)
+                  , FromJSON(parseJSON)
+                  , Value(Object) 
+                  )
+import Data.Aeson.Types (Parser)
+import GHC.Generics ( Generic )
 import Data.Text (Text, unpack)
 
 --
