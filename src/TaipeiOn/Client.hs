@@ -48,13 +48,17 @@ data Channel = Channel
   }
   deriving (Show, Eq, Generic)
 
+-- Client actions
 data Action 
   = WriteChannelBroadcast Channel MessageObject
   | WriteChannelPrivate Channel Text MessageObject
   | GetMessageReadStatus Channel Int
   | UploadFile Channel Text Text BL.ByteString (Maybe Bool)
+  | DownloadFile Channel Text
   deriving (Show, Eq, Generic)
 
+
+-- Make channel-related headers. Internal function.
 mkTpoHeader :: Channel -> [(HeaderName, ByteString)]
 mkTpoHeader chan = 
     [ ("Content-Type", "application/json; charset=utf-8")
@@ -63,31 +67,38 @@ mkTpoHeader chan =
     , ("Ocp-Apim-Subscription-Key", TE.encodeUtf8 (chanApiToken chan))
     ]
 
+-- Set channel-related headers. Internal function.
+setTpoChannelHeader :: Channel -> Request -> Request 
+setTpoChannelHeader chan oldReq = oldReq { requestHeaders = mkTpoHeader chan }
+
+-- Make TaipeiON request, edit if need to implement more action.
 mkTpoRequest :: Action -> Request -> Request
 mkTpoRequest action req =
   case action of
     WriteChannelBroadcast chan msg -> 
-      req 
-        { requestHeaders = mkTpoHeader chan
-        , requestBody = RequestBodyLBS $ AE.encode $ mkBroadcastMessage msg
+      setTpoChannelHeader chan req 
+        { requestBody = RequestBodyLBS $ AE.encode $ mkBroadcastMessage msg
         }
     WriteChannelPrivate chan recipient msg -> 
-      req 
-        { requestHeaders = mkTpoHeader chan
-        , requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
+      setTpoChannelHeader chan req 
+        {requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
         }
     GetMessageReadStatus chan msgSN -> 
-      req 
-        { requestHeaders = mkTpoHeader chan
-        , requestBody = RequestBodyLBS $ AE.encode $ mkMessageReadRequest msgSN
+      setTpoChannelHeader chan req 
+        {requestBody = RequestBodyLBS $ AE.encode $ mkMessageReadRequest msgSN
         } 
     UploadFile chan fileName fileExt fileData fileIsAsset ->
-      req 
-        { requestHeaders = mkTpoHeader chan
-        , requestBody = RequestBodyLBS  $ AE.encode 
+      setTpoChannelHeader chan req 
+        { requestBody = RequestBodyLBS  $ AE.encode 
                                         $ mkFileUpload fileName fileExt fileData fileIsAsset
         }
+    DownloadFile chan downloadToken ->
+      setTpoChannelHeader chan req
+        { requestBody = RequestBodyLBS  $ AE.encode 
+                                        $ mkDownloadRequest downloadToken
+        }
 
+-- Main client function
 tpoClient :: String -> Action -> IO TpoResponse
 tpoClient endPoint action = do
   
@@ -115,3 +126,4 @@ tpoClient endPoint action = do
     WriteChannelPrivate {}   -> pure $ decodeMessageResponse resp
     GetMessageReadStatus {}  -> pure $ decodeReadCountResponse resp
     UploadFile {}  -> pure $ decodeUploadFileResponse resp
+    DownloadFile {}  -> pure $ decodeGeneralResponse resp

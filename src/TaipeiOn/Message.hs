@@ -23,6 +23,7 @@ module TaipeiOn.Message
     , mkPrivateMessage
     , mkMessageReadRequest
     , mkFileUpload
+    , mkDownloadRequest
     ) where
 
 import Data.Aeson
@@ -90,15 +91,18 @@ data MessageObject
   | FileMsg  FileMessage
   deriving (Show, Eq)
 
+
+-- Main API payload structure
 data ApiPayload = ApiPayload
-  { apiAsk          :: Text
-  , apiRecipient    :: Maybe Text
-  , apiMessage      :: Maybe MessageObject
-  , apiMessageSN    :: Maybe Int
-  , apiFileType     :: Maybe Text
-  , apiFileData     :: Maybe Text
-  , apiFileName     :: Maybe Text
-  , apiFileIsAsset  :: Maybe Bool
+  { apiAsk           :: Text
+  , apiRecipient     :: Maybe Text
+  , apiMessage       :: Maybe MessageObject
+  , apiMessageSN     :: Maybe Int
+  , apiFileType      :: Maybe Text
+  , apiFileData      :: Maybe Text
+  , apiFileName      :: Maybe Text
+  , apiFileIsAsset   :: Maybe Bool
+  , apiDownloadToken :: Maybe Text
   }
   deriving (Show, Eq, Generic)
 
@@ -187,14 +191,15 @@ instance ToJSON ApiPayload where
     toJSON :: ApiPayload -> Value
     toJSON ApiPayload{..} =
         object $ filter notEmpty
-            [ "ask"           .= apiAsk
-            , "recipient"     .= apiRecipient
-            , "message"       .= apiMessage
-            , "messageSN"     .= apiMessageSN
-            , "file_type"     .= apiFileType
-            , "data_binary"   .= apiFileData
-            , "showName"      .= apiFileName
-            , "isAsset"       .= apiFileIsAsset
+            [ "ask"            .= apiAsk
+            , "recipient"      .= apiRecipient
+            , "message"        .= apiMessage
+            , "messageSN"      .= apiMessageSN
+            , "file_type"      .= apiFileType
+            , "data_binary"    .= apiFileData
+            , "showName"       .= apiFileName
+            , "isAsset"        .= apiFileIsAsset
+            , "download_token" .= apiDownloadToken
             ]
 -- | Constructs a 'TextMessage'.
 --
@@ -283,13 +288,14 @@ mkFileMessage optMsg fileName fileID
 mkEmptyRequest :: ApiPayload
 mkEmptyRequest = ApiPayload
                         { apiAsk = ""
-                        , apiRecipient    = Nothing
-                        , apiMessage      = Nothing 
-                        , apiMessageSN    = Nothing
-                        , apiFileType     = Nothing
-                        , apiFileData     = Nothing
-                        , apiFileName     = Nothing
-                        , apiFileIsAsset  = Nothing
+                        , apiRecipient     = Nothing
+                        , apiMessage       = Nothing 
+                        , apiMessageSN     = Nothing
+                        , apiFileType      = Nothing
+                        , apiFileData      = Nothing
+                        , apiFileName      = Nothing
+                        , apiFileIsAsset   = Nothing
+                        , apiDownloadToken = Nothing
                         }
 -- | Constructs a 'BroadcastMessage'
 --
@@ -331,3 +337,10 @@ mkFileUpload fileName fileExt fileData fileIsAsset = mkEmptyRequest
                                           , apiFileName     = emptyTextMaybe fileName
                                           , apiFileIsAsset  = fileIsAsset
                                           }
+
+mkDownloadRequest :: Text -> ApiPayload
+mkDownloadRequest downloadToken = mkEmptyRequest  
+                                    { apiAsk = "downloadFile"
+                                    , apiDownloadToken = Just downloadToken
+                                    }
+
