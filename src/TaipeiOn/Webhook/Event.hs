@@ -116,15 +116,15 @@ instance FromJSON TextMessage where
 instance FromJSON FileInfo where
     parseJSON :: Value -> Parser FileInfo
     parseJSON = withObject "FileInfo" $ \v -> FileInfo
-        <$> v .: "name"
-        <*> v .: "extension"
-        <*> v .: "size"
-        <*> v .: "token"
+        <$> v .: "fileName"
+        <*> v .: "fileExtension"
+        <*> v .: "fileSize"
+        <*> v .: "downloadToken"
 
 instance FromJSON PreviewImage where
     parseJSON :: Value -> Parser PreviewImage
     parseJSON = withObject "PreviewImage" $ \v -> PreviewImage
-        <$> v .: "token"
+        <$> v .: "downloadToken"
 
 instance FromJSON ImageMessage where
     parseJSON :: Value -> Parser ImageMessage
