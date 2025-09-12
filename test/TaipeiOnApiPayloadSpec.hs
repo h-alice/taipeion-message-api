@@ -19,14 +19,15 @@ spec = do
                   { WE.mevType = "message"
                   , WE.mevTimestamp = 1462629479859
                   , WE.mevSource = WE.EventSource
-                                    { WE.esType = "user"
-                                    , WE.esUserId = "taylor"
-                                    }
-                                    , WE.mevMessage = WE.TextMsg  ( WE.TextMessage
-                                                                    { WE.txtId = "ecca2bfd-4d57-4acb-92ed-de38ab54bad1"
-                                                                    , WE.txtText = "Hello, world!"
-                                                                    }
-                                                                  )
+                    { WE.esType = "user"
+                    , WE.esUserId = "taylor"
+                    }
+                    , WE.mevMessage = WE.TextMsg  
+                      ( WE.TextMessage
+                        { WE.txtId = "ecca2bfd-4d57-4acb-92ed-de38ab54bad1"
+                        , WE.txtText = "Hello, world!"
+                        }
+                      )
                   }
                 ]
               }
