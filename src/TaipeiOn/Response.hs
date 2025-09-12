@@ -48,7 +48,7 @@ data ResponseError = ResponseError
   } deriving (Show, Eq)
 
 data ReadDetail = ReadDetail
-  { resReadAccountID :: Int
+  { resReadAccountID :: String
   , resReadTimestamp :: String
   } deriving (Show, Eq)
 
@@ -94,7 +94,7 @@ instance FromJSON ResponseReadCount where
   parseJSON :: Value -> Parser ResponseReadCount
   parseJSON = withObject "ResponseReadCount" $ \v ->
     ResponseReadCount <$> v .: "ReadCount"
-                      <*> v .: "ReadDetails"
+                      <*> v .: "ReadDetailList"
 
 decodeGeneralResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeGeneralResponse resp = General ResponseGeneral 
