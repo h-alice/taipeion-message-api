@@ -48,10 +48,20 @@ data Channel = Channel
   }
   deriving (Show, Eq, Generic)
 
--- Client actions
+-- | Client actions
+-- 
+-- Actions:
+--
+-- * @WriteChannelBroadcast@        Write broadcast message to channel.
+-- * @WriteChannelPrivate@          Write private message to channel.
+-- * @WriteChannelMultiplePrivate@  Write private message to channel, with multiple recipients.
+-- * @GetMessageReadStatus@         Get message read status.
+-- * @UploadFile@                   Upload file to channel.
+-- * @DownloadFile@                 Download file from channel.
 data Action 
   = WriteChannelBroadcast Channel MessageObject
   | WriteChannelPrivate Channel Text MessageObject
+  | WriteChannelMultiplePrivate Channel [Text] MessageObject
   | GetMessageReadStatus Channel Int
   | UploadFile Channel Text Text BL.ByteString (Maybe Bool)
   | DownloadFile Channel Text
@@ -82,6 +92,10 @@ mkTpoRequest action req =
     WriteChannelPrivate chan recipient msg -> 
       setTpoChannelHeader chan req 
         {requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
+        }
+    WriteChannelMultiplePrivate chan recipients msg ->
+      setTpoChannelHeader chan req 
+        {requestBody = RequestBodyLBS $ AE.encode $ mkMultiplePrivateMessage recipients msg
         }
     GetMessageReadStatus chan msgSN -> 
       setTpoChannelHeader chan req 
@@ -124,6 +138,7 @@ tpoClient endPoint action = do
   case action of
     WriteChannelBroadcast {} -> pure $ decodeMessageResponse resp
     WriteChannelPrivate {}   -> pure $ decodeMessageResponse resp
+    WriteChannelMultiplePrivate {} -> pure $ decodeMessageResponse resp
     GetMessageReadStatus {}  -> pure $ decodeReadCountResponse resp
     UploadFile {}  -> pure $ decodeUploadFileResponse resp
     DownloadFile {}  -> pure $ decodeGeneralResponse resp
