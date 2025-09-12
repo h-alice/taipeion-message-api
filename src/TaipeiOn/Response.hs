@@ -119,10 +119,4 @@ decodeUploadFileResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeUploadFileResponse = decodeTpoResponse UploadFileResponse
 
 decodeReadCountResponse :: H.Response LBS.ByteString -> TpoResponse
-decodeReadCountResponse resp =
-  case ( eitherDecode (getResponseBody resp) :: Either String ResponseReadCount ) of
-    Right r -> ReadCount r
-    Left _ -> 
-      case ( eitherDecode (getResponseBody resp) :: Either String ResponseError ) of
-        Right r -> ErrorResponse r
-        Left _ -> decodeGeneralResponse resp
+decodeReadCountResponse = decodeTpoResponse ReadCount
