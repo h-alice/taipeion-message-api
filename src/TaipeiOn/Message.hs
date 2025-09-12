@@ -1,3 +1,4 @@
+-- Message API payload crafting
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -20,11 +21,20 @@ module TaipeiOn.Message
     , mkFileMessage
     , mkBroadcastMessage
     , mkPrivateMessage
+    , mkMessageReadRequest
     ) where
 
 import Data.Aeson
 import GHC.Generics
+
 import Data.Text (Text)
+
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.Text.Lazy.Encoding as TL
+import qualified Data.Text.Lazy as TL
+import qualified Data.ByteString.Base64.Lazy as B64
+import qualified Data.ByteString.Char8 as BC
+
 
 -- | Represents a text message object.
 --   Corresponds to section 2.1 of the API specification.
@@ -80,11 +90,24 @@ data MessageObject
   deriving (Show, Eq)
 
 data ApiPayload = ApiPayload
-  { apiAsk       :: Text,
-    apiRecipient :: Text,
-    apiMessage   :: MessageObject
+  { apiAsk          :: Text
+  , apiRecipient    :: Maybe Text
+  , apiMessage      :: Maybe MessageObject
+  , apiMessageSN    :: Maybe Int
+  , apiFileType     :: Maybe Text
+  , apiFileData     :: Maybe Text
+  , apiFileName     :: Maybe Text
+  , apiFileIsAsset  :: Maybe Bool
   }
   deriving (Show, Eq, Generic)
+
+emptyTextMaybe :: Text -> Maybe Text
+emptyTextMaybe "" = Nothing
+emptyTextMaybe txt = Just txt
+
+
+
+--
 
 -- Helper function to filter out fields with empty/null values from JSON objects.
 -- This style is adopted from the provided Message.hs file.
@@ -163,9 +186,14 @@ instance ToJSON ApiPayload where
     toJSON :: ApiPayload -> Value
     toJSON ApiPayload{..} =
         object $ filter notEmpty
-            [ "ask"       .= apiAsk
-            , "recipient" .= apiRecipient
-            , "message"   .= apiMessage
+            [ "ask"           .= apiAsk
+            , "recipient"     .= apiRecipient
+            , "message"       .= apiMessage
+            , "messageSN"     .= apiMessageSN
+            , "file_type "    .= apiFileType
+            , "data_binary"   .= apiFileData
+            , "showName"      .= apiFileName
+            , "isAsset"       .= apiFileIsAsset
             ]
 -- | Constructs a 'TextMessage'.
 --
@@ -249,16 +277,30 @@ mkFileMessage optMsg fileName fileID
                           , filFileID = fileID
                           }
 
+
+
+mkEmptyRequest :: ApiPayload
+mkEmptyRequest = ApiPayload
+                        { apiAsk = ""
+                        , apiRecipient    = Nothing
+                        , apiMessage      = Nothing 
+                        , apiMessageSN    = Nothing
+                        , apiFileType     = Nothing
+                        , apiFileData     = Nothing
+                        , apiFileName     = Nothing
+                        , apiFileIsAsset  = Nothing
+                        }
 -- | Constructs a 'BroadcastMessage'
 --
 -- Arguments:
 --
 -- * @MessageObject@:   Message to send
 mkBroadcastMessage :: MessageObject -> ApiPayload
-mkBroadcastMessage msg = ApiPayload { apiAsk = "broadcastMessage"
-                                    , apiRecipient = ""
-                                    , apiMessage = msg 
+mkBroadcastMessage msg = mkEmptyRequest { apiAsk = "broadcastMessage"
+                                                                        , apiMessage = Just msg 
                                     }
+
+
 
 -- | Constructs a 'PrivateMessage'
 --
@@ -267,8 +309,13 @@ mkBroadcastMessage msg = ApiPayload { apiAsk = "broadcastMessage"
 -- * @Text@:            The message recipient
 -- * @MessageObject@:   Message to send
 mkPrivateMessage :: Text -> MessageObject -> ApiPayload
-mkPrivateMessage recipient msg = ApiPayload  
-                                    { apiAsk = "sendMessage"
-                                    , apiRecipient = recipient
-                                    , apiMessage = msg 
+mkPrivateMessage recipient msg = mkEmptyRequest { apiAsk = "sendMessage"
+                                                , apiRecipient    = Just recipient
+                                                , apiMessage      = Just msg 
+                                                }
+
+mkMessageReadRequest :: Int -> ApiPayload
+mkMessageReadRequest msgSN = mkEmptyRequest { apiAsk = "getMsgReadStatus"
+                                            , apiMessageSN    = Just msgSN
+                                            }
                                     }

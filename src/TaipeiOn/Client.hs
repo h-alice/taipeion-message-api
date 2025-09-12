@@ -21,7 +21,6 @@ import Network.HTTP.Conduit
       RequestBody(RequestBodyLBS),
       httpLbs )
 import TaipeiOn.Message
-    ( mkBroadcastMessage, mkPrivateMessage, MessageObject )
 import GHC.Generics ( Generic )
 import Data.Text ( Text )
 import qualified Data.Text.Encoding as TE
@@ -51,6 +50,8 @@ data Channel = Channel
 data Action 
   = WriteChannelBroadcast Channel MessageObject
   | WriteChannelPrivate Channel Text MessageObject
+  | GetMessageReadStatus Channel Int
+  deriving (Show, Eq, Generic)
 
 mkTpoHeader :: Channel -> [(HeaderName, ByteString)]
 mkTpoHeader chan = 
@@ -60,23 +61,27 @@ mkTpoHeader chan =
     , ("Ocp-Apim-Subscription-Key", TE.encodeUtf8 (chanApiToken chan))
     ]
 
-mkTpoRequest :: Request -> Action -> Request
-mkTpoRequest req action =
+mkTpoRequest :: Action -> Request -> Request
+mkTpoRequest action req =
   case action of
     WriteChannelBroadcast chan msg -> 
       req 
         { method = "POST"
         , requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkBroadcastMessage msg
-        , redactHeaders = Set.fromList ["Authorization", "Ocp-Apim-Subscription-Key"]
         }
     WriteChannelPrivate chan recipient msg -> 
       req 
         { method = "POST"
         , requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
-        , redactHeaders = Set.fromList ["Authorization", "Ocp-Apim-Subscription-Key"]
         }
+    GetMessageReadStatus chan msgSN -> 
+      req 
+        { method = "POST"
+        , requestHeaders = mkTpoHeader chan
+        , requestBody = RequestBodyLBS $ AE.encode $ mkMessageReadRequest msgSN
+        } 
 
 tpoClient :: String -> Action -> IO TpoResponse
 tpoClient endPoint action = do
@@ -88,7 +93,13 @@ tpoClient endPoint action = do
   vanillaReq <- parseRequest endPoint
 
   -- Create actual request
-  let req = mkTpoRequest vanillaReq action
+  let req = mkTpoRequest action vanillaReq 
+                                  { redactHeaders 
+                                      = Set.fromList 
+                                          [ "Authorization"
+                                          , "Ocp-Apim-Subscription-Key"
+                                          ]
+                                  } 
 
   -- Send request
   resp <- httpLbs req manager
@@ -96,3 +107,4 @@ tpoClient endPoint action = do
   case action of
     WriteChannelBroadcast {} -> pure $ decodeMessageResponse resp
     WriteChannelPrivate {} -> pure $ decodeMessageResponse resp
+    GetMessageReadStatus {} -> pure $ decodeReadCountResponse resp
