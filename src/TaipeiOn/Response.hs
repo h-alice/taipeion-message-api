@@ -102,23 +102,21 @@ decodeGeneralResponse resp = General ResponseGeneral
                                 , resContent = toStrict $ getResponseBody resp
                                 }
 
-decodeMessageResponse :: H.Response LBS.ByteString -> TpoResponse
-decodeMessageResponse resp =
-  case ( eitherDecode (getResponseBody resp) :: Either String ResponseSendMessage ) of
-    Right r -> SendMessage r
+decodeTpoResponse :: (FromJSON a) => (a -> TpoResponse) -> H.Response LBS.ByteString -> TpoResponse
+decodeTpoResponse constructor resp =
+  let body = getResponseBody resp
+  in case eitherDecode body of
+    Right r -> constructor r
     Left _ -> 
-      case ( eitherDecode (getResponseBody resp) :: Either String ResponseError ) of
+      case eitherDecode body of
         Right r -> ErrorResponse r
         Left _ -> decodeGeneralResponse resp
 
+decodeMessageResponse :: H.Response LBS.ByteString -> TpoResponse
+decodeMessageResponse = decodeTpoResponse SendMessage
+
 decodeUploadFileResponse :: H.Response LBS.ByteString -> TpoResponse
-decodeUploadFileResponse resp =
-  case ( eitherDecode (getResponseBody resp) :: Either String ResponseUploadFile ) of
-    Right r -> UploadFileResponse r
-    Left _ -> 
-      case ( eitherDecode (getResponseBody resp) :: Either String ResponseError ) of
-        Right r -> ErrorResponse r
-        Left _ -> decodeGeneralResponse resp
+decodeUploadFileResponse = decodeTpoResponse UploadFileResponse
 
 decodeReadCountResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeReadCountResponse resp =
