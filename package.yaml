@@ -21,14 +21,16 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- aeson
-- bytestring
-- text
-- hspec
-- raw-strings-qq
+- text                  # Essential text processing
+- bytestring            # Essential bytestring processing
+- base64-bytestring     # Base64 encoding 
+- aeson                 # JSON handling
+- hspec                 # Testing framework
+- raw-strings-qq        # Raw string handling
 - containers
 - http-conduit
 - http-types
+- http-client
 
 ghc-options:
 - -Wall

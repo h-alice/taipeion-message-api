@@ -26,6 +26,7 @@ import Data.Text ( Text )
 import qualified Data.Text.Encoding as TE
 import qualified Data.Set as Set
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BL
 
 import Network.HTTP.Types.Header (HeaderName)
 import Network.HTTP.Client.Conduit (Request(redactHeaders))
@@ -51,6 +52,7 @@ data Action
   = WriteChannelBroadcast Channel MessageObject
   | WriteChannelPrivate Channel Text MessageObject
   | GetMessageReadStatus Channel Int
+  | UploadFile Channel Text Text BL.ByteString (Maybe Bool)
   deriving (Show, Eq, Generic)
 
 mkTpoHeader :: Channel -> [(HeaderName, ByteString)]
@@ -66,22 +68,25 @@ mkTpoRequest action req =
   case action of
     WriteChannelBroadcast chan msg -> 
       req 
-        { method = "POST"
-        , requestHeaders = mkTpoHeader chan
+        { requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkBroadcastMessage msg
         }
     WriteChannelPrivate chan recipient msg -> 
       req 
-        { method = "POST"
-        , requestHeaders = mkTpoHeader chan
+        { requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkPrivateMessage recipient msg
         }
     GetMessageReadStatus chan msgSN -> 
       req 
-        { method = "POST"
-        , requestHeaders = mkTpoHeader chan
+        { requestHeaders = mkTpoHeader chan
         , requestBody = RequestBodyLBS $ AE.encode $ mkMessageReadRequest msgSN
         } 
+    UploadFile chan fileName fileExt fileData fileIsAsset ->
+      req 
+        { requestHeaders = mkTpoHeader chan
+        , requestBody = RequestBodyLBS  $ AE.encode 
+                                        $ mkFileUpload fileName fileExt fileData fileIsAsset
+        }
 
 tpoClient :: String -> Action -> IO TpoResponse
 tpoClient endPoint action = do
@@ -94,7 +99,8 @@ tpoClient endPoint action = do
 
   -- Create actual request
   let req = mkTpoRequest action vanillaReq 
-                                  { redactHeaders 
+                                  { method = "POST"
+                                  , redactHeaders 
                                       = Set.fromList 
                                           [ "Authorization"
                                           , "Ocp-Apim-Subscription-Key"
@@ -106,5 +112,6 @@ tpoClient endPoint action = do
 
   case action of
     WriteChannelBroadcast {} -> pure $ decodeMessageResponse resp
-    WriteChannelPrivate {} -> pure $ decodeMessageResponse resp
-    GetMessageReadStatus {} -> pure $ decodeReadCountResponse resp
+    WriteChannelPrivate {}   -> pure $ decodeMessageResponse resp
+    GetMessageReadStatus {}  -> pure $ decodeReadCountResponse resp
+    UploadFile {}  -> pure $ decodeUploadFileResponse resp

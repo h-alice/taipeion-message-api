@@ -22,6 +22,7 @@ module TaipeiOn.Message
     , mkBroadcastMessage
     , mkPrivateMessage
     , mkMessageReadRequest
+    , mkFileUpload
     ) where
 
 import Data.Aeson
@@ -190,7 +191,7 @@ instance ToJSON ApiPayload where
             , "recipient"     .= apiRecipient
             , "message"       .= apiMessage
             , "messageSN"     .= apiMessageSN
-            , "file_type "    .= apiFileType
+            , "file_type"     .= apiFileType
             , "data_binary"   .= apiFileData
             , "showName"      .= apiFileName
             , "isAsset"       .= apiFileIsAsset
@@ -297,8 +298,8 @@ mkEmptyRequest = ApiPayload
 -- * @MessageObject@:   Message to send
 mkBroadcastMessage :: MessageObject -> ApiPayload
 mkBroadcastMessage msg = mkEmptyRequest { apiAsk = "broadcastMessage"
-                                                                        , apiMessage = Just msg 
-                                    }
+                                        , apiMessage = Just msg 
+                                        }
 
 
 
@@ -318,4 +319,15 @@ mkMessageReadRequest :: Int -> ApiPayload
 mkMessageReadRequest msgSN = mkEmptyRequest { apiAsk = "getMsgReadStatus"
                                             , apiMessageSN    = Just msgSN
                                             }
-                                    }
+
+
+mkFileUpload :: Text -> Text -> BL.ByteString -> Maybe Bool -> ApiPayload
+mkFileUpload fileName fileExt fileData fileIsAsset = mkEmptyRequest
+                                          { apiAsk = "uploadFile"
+                                          , apiFileType     = Just fileExt
+                                          , apiFileData     = Just  $ TL.toStrict 
+                                                                    $ TL.decodeLatin1 
+                                                                    $ B64.encode fileData
+                                          , apiFileName     = emptyTextMaybe fileName
+                                          , apiFileIsAsset  = fileIsAsset
+                                          }
