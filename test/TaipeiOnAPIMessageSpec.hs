@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 -- test/LibSpec.hs
-module TaipeiOnMessageSpec (spec) where
+module TaipeiOnAPIMessageSpec (spec) where
 
 import Test.Hspec
 import TaipeiOn.Message
