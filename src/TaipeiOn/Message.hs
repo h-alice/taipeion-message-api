@@ -268,12 +268,12 @@ mkAudioMessage optMsg fileName fileID
 -- * @Text@:        The display file name
 -- * @Text@:        The file ID
 mkFileMessage 
-  :: Maybe Text 
+  :: Text 
   -> Text 
   -> Text 
   -> MessageObject
 mkFileMessage optMsg fileName fileID 
-  = FileMsg $ FileMessage { filText = optMsg
+  = FileMsg $ FileMessage { filText = emptyTextMaybe optMsg
                           , filShowFileName = fileName
                           , filFileID = fileID
                           }

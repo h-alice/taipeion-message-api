@@ -34,7 +34,7 @@ data ResponseSendMessage = ResponseSendMessage
   } deriving (Show, Eq)
 
 data ResponseUploadFile = ResponseUploadFile
-  { resFileID :: Int
+  { resFileID :: String
   } deriving (Show, Eq)
 
 data ResponseGeneral = ResponseGeneral
@@ -59,11 +59,11 @@ data ResponseReadCount = ResponseReadCount
 
 -- | Sum type
 data TpoResponse
-  = SendMessage     ResponseSendMessage
-  | UploadFile      ResponseUploadFile
-  | ReadCount       ResponseReadCount
-  | ErrorResponse   ResponseError
-  | General         ResponseGeneral
+  = SendMessage             ResponseSendMessage
+  | UploadFileResponse      ResponseUploadFile
+  | ReadCount               ResponseReadCount
+  | ErrorResponse           ResponseError
+  | General                 ResponseGeneral
   deriving (Show, Eq)
 
 -- Sub-types JSON deserializers
@@ -114,7 +114,7 @@ decodeMessageResponse resp =
 decodeUploadFileResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeUploadFileResponse resp =
   case ( eitherDecode (getResponseBody resp) :: Either String ResponseUploadFile ) of
-    Right r -> UploadFile r
+    Right r -> UploadFileResponse r
     Left _ -> 
       case ( eitherDecode (getResponseBody resp) :: Either String ResponseError ) of
         Right r -> ErrorResponse r
