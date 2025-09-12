@@ -21,6 +21,7 @@ module TaipeiOn.Message
     , mkFileMessage
     , mkBroadcastMessage
     , mkPrivateMessage
+    , mkMultiplePrivateMessage
     , mkMessageReadRequest
     , mkFileUpload
     , mkDownloadRequest
@@ -35,7 +36,6 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.Text.Lazy as TL
 import qualified Data.ByteString.Base64.Lazy as B64
-import qualified Data.ByteString.Char8 as BC
 
 
 -- | Represents a text message object.
@@ -103,6 +103,7 @@ data ApiPayload = ApiPayload
   , apiFileName      :: Maybe Text
   , apiFileIsAsset   :: Maybe Bool
   , apiDownloadToken :: Maybe Text
+  , apiManyRecipient :: Maybe [Text]
   }
   deriving (Show, Eq, Generic)
 
@@ -200,6 +201,7 @@ instance ToJSON ApiPayload where
             , "showName"       .= apiFileName
             , "isAsset"        .= apiFileIsAsset
             , "download_token" .= apiDownloadToken
+            , "recipientList"  .= apiManyRecipient
             ]
 -- | Constructs a 'TextMessage'.
 --
@@ -296,6 +298,7 @@ mkEmptyRequest = ApiPayload
                         , apiFileName      = Nothing
                         , apiFileIsAsset   = Nothing
                         , apiDownloadToken = Nothing
+                        , apiManyRecipient = Nothing
                         }
 -- | Constructs a 'BroadcastMessage'
 --
@@ -320,6 +323,13 @@ mkPrivateMessage recipient msg = mkEmptyRequest { apiAsk = "sendMessage"
                                                 , apiRecipient    = Just recipient
                                                 , apiMessage      = Just msg 
                                                 }
+
+mkMultiplePrivateMessage :: [Text] -> MessageObject -> ApiPayload
+mkMultiplePrivateMessage recipient msg = mkEmptyRequest 
+                                              { apiAsk = "broadcastMessageByLoginNameList"
+                                              , apiManyRecipient = Just recipient
+                                              , apiMessage       = Just msg 
+                                              }
 
 mkMessageReadRequest :: Int -> ApiPayload
 mkMessageReadRequest msgSN = mkEmptyRequest { apiAsk = "getMsgReadStatus"
