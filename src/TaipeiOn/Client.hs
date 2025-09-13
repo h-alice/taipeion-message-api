@@ -11,10 +11,10 @@
 -- and for specifying API calls ('Action'), and exposes a single function,
 -- 'tpoClient', to execute requests.
 --
--- Tips for developmenting
+-- Tips for development
 --
--- If you want to add more client actions, define the actio in `data Action` 
--- section first. Then add the corresponding request generating strategy 
+-- If you want to add more client actions, define the actio in `data Action`
+-- section first. Then add the corresponding request generating strategy
 -- at `mkTpoRequest`. And finally, update the `tpoClient`.
 --
 

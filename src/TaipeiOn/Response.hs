@@ -1,3 +1,26 @@
+-- |
+-- Module      : TaipeiOn.Response
+-- Copyright   : (c) 2025 Wayne Hong
+-- License     : BSD-3-Clause
+-- Maintainer  : h-alice
+-- Stability   : experimental
+-- Portability : non-portable (GHC extensions)
+--
+-- This module defines the data types for deserializing responses from the
+-- TaipeiON API. It also provides helper functions to automatically parse
+-- raw HTTP responses into the appropriate structured data types, including
+-- handling of error responses.
+--
+-- Tips for development
+--
+-- If you need to defining more response type, you will need to define the
+-- structure and `FromJSON` instance. Then you'll need to add your response
+-- type to the sum type `TpoResponse`.
+-- 
+-- You may also want to make your deserialization method, so `decodeTpoResponse`
+-- can work properly.
+--
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
@@ -5,12 +28,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module TaipeiOn.Response
-    ( ResponseSendMessage(..)
+    ( -- * Specific Response Types
+      ResponseSendMessage(..)
     , ResponseUploadFile(..)
     , ResponseReadCount(..)
     , ResponseError(..)
     , ReadDetail(..)
+
+      -- * General Response Wrapper
     , TpoResponse(..)
+
+      -- * Response Decoders
     , decodeGeneralResponse
     , decodeMessageResponse
     , decodeUploadFileResponse
@@ -27,37 +55,47 @@ import qualified Data.ByteString.Lazy as LBS
 import Network.HTTP.Simple (getResponseBody, getResponseStatusCode)
 import Data.ByteString (toStrict)
 
--- | Sub-data structures
+--
+-- Response type and structure
+--
 
+-- | Represents the successful response from sending a message.
 data ResponseSendMessage = ResponseSendMessage
-  { resMessageSN :: Int
+  { resMessageSN :: Int -- ^ The unique serial number of the sent message.
   } deriving (Show, Eq)
 
+-- | Represents the successful response from uploading a file.
 data ResponseUploadFile = ResponseUploadFile
-  { resFileID :: String
+  { resFileID :: String -- ^ The unique identifier for the uploaded file.
   } deriving (Show, Eq)
 
+-- | Represents a general, unparsed HTTP response. This is used as a fallback
+--   when a specific JSON structure is not expected or parsing fails.
 data ResponseGeneral = ResponseGeneral
-  { resStatusCode :: Int
-  , resContent    :: BS.ByteString
+  { resStatusCode :: Int         -- ^ The HTTP status code of the response.
+  , resContent    :: BS.ByteString -- ^ The raw response body.
   } deriving (Show, Eq)
 
+-- | Represents an error response from the API.
 data ResponseError = ResponseError
-  { resErrorMessage :: Text
-  , resErrorDetails :: Text
+  { resErrorMessage :: Text -- ^ A summary of the error.
+  , resErrorDetails :: Text -- ^ Detailed information about the error.
   } deriving (Show, Eq)
 
+-- | Contains details about a single user who has read a message.
 data ReadDetail = ReadDetail
-  { resReadAccountID :: String
-  , resReadTimestamp :: String
+  { resReadAccountID :: String -- ^ The account ID of the user who read the message.
+  , resReadTimestamp :: String -- ^ The timestamp when the message was read.
   } deriving (Show, Eq)
 
+-- | Represents the response for a message read status query.
 data ResponseReadCount = ResponseReadCount
-              { resReadCount   :: Int
-              , resReadDetails :: [ReadDetail]
+              { resReadCount   :: Int          -- ^ The total number of users who have read the message.
+              , resReadDetails :: [ReadDetail] -- ^ A list of details for each user who has read the message.
               } deriving (Show, Eq)
 
--- | Sum type
+-- | A sum type that encapsulates all possible structured responses from the API.
+--   This allows client functions to return a single, consistent type.
 data TpoResponse
   = SendMessage             ResponseSendMessage
   | UploadFileResponse      ResponseUploadFile
@@ -66,7 +104,9 @@ data TpoResponse
   | General                 ResponseGeneral
   deriving (Show, Eq)
 
--- Sub-types JSON deserializers
+--
+-- FromJSON Instances
+--
 
 instance FromJSON ResponseSendMessage where
   parseJSON :: Value -> Parser ResponseSendMessage
@@ -96,27 +136,36 @@ instance FromJSON ResponseReadCount where
     ResponseReadCount <$> v .: "ReadCount"
                       <*> v .: "ReadDetailList"
 
+-- | Decodes a raw HTTP response into a 'TpoResponse.General' wrapper. This is the
+--   ultimate fallback if no other decoding succeeds.
 decodeGeneralResponse :: H.Response LBS.ByteString -> TpoResponse
-decodeGeneralResponse resp = General ResponseGeneral 
+decodeGeneralResponse resp = General ResponseGeneral
                                 { resStatusCode = getResponseStatusCode resp
                                 , resContent = toStrict $ getResponseBody resp
                                 }
 
+-- | A higher-order function to decode an HTTP response. It first tries to
+--   decode the body into the specified 'a' type. If that fails, it tries to decode
+--   it as a 'ResponseError'. If both fail, it wraps the raw response in
+--   'TpoResponse.General'.
 decodeTpoResponse :: (FromJSON a) => (a -> TpoResponse) -> H.Response LBS.ByteString -> TpoResponse
 decodeTpoResponse constructor resp =
   let body = getResponseBody resp
   in case eitherDecode body of
     Right r -> constructor r
-    Left _ -> 
+    Left _ ->
       case eitherDecode body of
         Right r -> ErrorResponse r
         Left _ -> decodeGeneralResponse resp
 
+-- | Decodes an HTTP response expected to contain a 'ResponseSendMessage'.
 decodeMessageResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeMessageResponse = decodeTpoResponse SendMessage
 
+-- | Decodes an HTTP response expected to contain a 'ResponseUploadFile'.
 decodeUploadFileResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeUploadFileResponse = decodeTpoResponse UploadFileResponse
 
+-- | Decodes an HTTP response expected to contain a 'ResponseReadCount'.
 decodeReadCountResponse :: H.Response LBS.ByteString -> TpoResponse
 decodeReadCountResponse = decodeTpoResponse ReadCount
