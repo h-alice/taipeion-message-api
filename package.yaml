@@ -1,6 +1,6 @@
 name:                taipeiOnApi
 version:             0.1.0.0
-github:              "h-alice/taipeiOnApi"
+github:              "h-alice/taipeion-message-api"
 license:             BSD-3-Clause
 author:              "h-alice"
 maintainer:          "admin@halice.art"
@@ -14,7 +14,7 @@ extra-source-files:
 # synopsis:            Library for TaipeiON message API
 # category:            Web
 
-description:         Please see the README on GitHub at <https://github.com/h-alice/taipeiOnApi#readme>
+description:         Please see the README on GitHub at <https://github.com/h-alice/taipeion-message-api#readme>
 
 dependencies:
 - base >= 4.7 && < 5
