@@ -1,4 +1,4 @@
-name:                taipeiOnApi
+name:                taipeion-api
 version:             0.1.0.0
 github:              "h-alice/taipeion-message-api"
 license:             BSD-3-Clause
@@ -44,7 +44,7 @@ library:
   source-dirs: src
 
 #executables:
-#  taipeiOnApi-exe:
+#  taipeion-api-exe:
 #    main:                Main.hs
 #    source-dirs:         app
 #    ghc-options:
@@ -52,10 +52,10 @@ library:
 #    - -rtsopts
 #    - -with-rtsopts=-N
 #    dependencies:
-#    - taipeiOnApi
+#    - taipeion-api
 
 tests:
-  taipeiOnApi-test:
+  taipeion-api-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -63,4 +63,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - taipeiOnApi
+    - taipeion-api
