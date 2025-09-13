@@ -13,7 +13,9 @@
 --
 -- Tips for developmenting
 --
--- 
+-- If you want to add more client actions, define the actio in `data Action` 
+-- section first. Then add the corresponding request generating strategy 
+-- at `mkTpoRequest`. And finally, update the `tpoClient`.
 
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
