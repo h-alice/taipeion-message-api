@@ -1,7 +1,7 @@
 name:                taipeiOnApi
 version:             0.1.0.0
 github:              "h-alice/taipeiOnApi"
-license:             GPL-3.0-or-later
+license:             BSD-3-Clause
 author:              "h-alice"
 maintainer:          "admin@halice.art"
 copyright:           "2025 Wayne 'h-alice' Hong"
