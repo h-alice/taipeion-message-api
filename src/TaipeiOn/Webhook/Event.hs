@@ -1,20 +1,37 @@
+-- |
+-- Module      : TaipeiOn.Webhook.Event
+-- Copyright   : (c) 2025 Wayne Hong
+-- License     : BSD-3-Clause
+-- Maintainer  : h-alice
+-- Stability   : experimental
+-- Portability : non-portable (GHC extensions)
+--
+-- This module defines the data types for deserializing incoming webhook events
+-- from the TaipeiON platform. These data structures correspond to the JSON
+-- objects sent to your webhook URL when a user sends a message to your channel.
+--
+
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
-  
--- src/TaipeiOn/Webhook/Event.hs
+
 module TaipeiOn.Webhook.Event
-    ( WebhookPayload(..)
+    ( -- * Webhook Payload Structure
+      WebhookPayload(..)
     , MessageEvent(..)
     , EventSource(..)
+
+      -- * Message Object Types
     , MessageObject(..)
     , TextMessage(..)
     , ImageMessage(..)
     , VideoMessage(..)
     , AudioMessage(..)
     , FileMessage(..)
+
+      -- * File and Media Information
     , FileInfo(..)
     , PreviewImage(..)
     ) where
@@ -22,59 +39,63 @@ module TaipeiOn.Webhook.Event
 import Data.Aeson ( withObject
                   , (.:)
                   , FromJSON(parseJSON)
-                  , Value(Object) 
+                  , Value(Object)
                   )
 import Data.Aeson.Types (Parser)
 import GHC.Generics ( Generic )
 import Data.Text (Text, unpack)
 
---
--- Data structures for incoming webhook events
---
-  
+-- | Represents a text message received via webhook.
 data TextMessage = TextMessage
-  { txtId   :: Text
-  , txtText :: Text
+  { txtId   :: Text -- ^ The unique identifier of the message.
+  , txtText :: Text -- ^ The textual content of the message.
   }
   deriving (Show, Eq, Generic)
 
+-- | Contains metadata about a file received in a message.
 data FileInfo = FileInfo
-  { fiName      :: Text
-  , fiExtension :: Text
-  , fiSize      :: Int
-  , fiToken     :: Text
+  { fiName      :: Text -- ^ The name of the file.
+  , fiExtension :: Text -- ^ The file extension (e.g., "jpg", "pdf").
+  , fiSize      :: Int  -- ^ The size of the file in bytes.
+  , fiToken     :: Text -- ^ The token required to download this file.
   }
   deriving (Show, Eq, Generic)
 
+-- | Contains information for downloading a preview image for media files.
 data PreviewImage = PreviewImage
-  { piToken :: Text
+  { piToken :: Text -- ^ The token required to download the preview image.
   }
   deriving (Show, Eq, Generic)
 
+-- | Represents an image message received via webhook.
 data ImageMessage = ImageMessage
-  { imPreviewImage :: PreviewImage
-  , imFileInfo     :: FileInfo
+  { imPreviewImage :: PreviewImage -- ^ Information for the preview image.
+  , imFileInfo     :: FileInfo     -- ^ Metadata for the full-sized image file.
   }
   deriving (Show, Eq, Generic)
 
+-- | Represents a video message received via webhook.
 data VideoMessage = VideoMessage
-  { viDuration     :: Int
-  , viPreviewImage :: PreviewImage
-  , viFileInfo     :: FileInfo
+  { viDuration     :: Int          -- ^ The duration of the video in milliseconds.
+  , viPreviewImage :: PreviewImage -- ^ Information for the preview thumbnail.
+  , viFileInfo     :: FileInfo     -- ^ Metadata for the video file.
   }
   deriving (Show, Eq, Generic)
 
+-- | Represents an audio message received via webhook.
 data AudioMessage = AudioMessage
-  { aiDuration     :: Int
-  , aiFileInfo     :: FileInfo
+  { aiDuration     :: Int      -- ^ The duration of the audio in milliseconds.
+  , aiFileInfo     :: FileInfo -- ^ Metadata for the audio file.
   }
   deriving (Show, Eq, Generic)
 
+-- | Represents a generic file message received via webhook.
 data FileMessage = FileMessage
-  { fmFileInfo :: FileInfo
+  { fmFileInfo :: FileInfo -- ^ Metadata for the file.
   }
   deriving (Show, Eq, Generic)
 
+-- | A sum type that represents any possible message object from a webhook event.
 data MessageObject
   = TextMsg  TextMessage
   | ImageMsg ImageMessage
@@ -83,34 +104,38 @@ data MessageObject
   | FileMsg  FileMessage
   deriving (Show, Eq)
 
+-- | Describes the source of a message event, typically a user.
 data EventSource = EventSource
-  { esType   :: Text
-  , esUserId :: Text
+  { esType   :: Text -- ^ The type of the source (e.g., "user").
+  , esUserId :: Text -- ^ The unique identifier for the user.
   }
   deriving (Show, Eq, Generic)
 
+-- | Represents a single event within a webhook payload, such as a user
+--   sending a message.
 data MessageEvent = MessageEvent
-  { mevType      :: Text
-  , mevTimestamp :: Int
-  , mevSource    :: EventSource
-  , mevMessage   :: MessageObject
+  { mevType      :: Text          -- ^ The type of event (e.g., "message").
+  , mevTimestamp :: Int           -- ^ The timestamp of the event in seconds since the epoch.
+  , mevSource    :: EventSource   -- ^ The source of the event.
+  , mevMessage   :: MessageObject -- ^ The message object associated with the event.
   }
   deriving (Show, Eq, Generic)
 
+-- | The top-level data structure for a webhook payload from the TaipeiON platform.
 data WebhookPayload = WebhookPayload
-  { wpDestination :: Int
-  , wpEvents      :: [MessageEvent]
+  { wpDestination :: Int            -- ^ The channel ID that received the events.
+  , wpEvents      :: [MessageEvent] -- ^ A list of events in this payload.
   }
   deriving (Show, Eq, Generic)
 
 --
--- FromJSON Instances
+-- FromJSON Instances for Deserialization
 --
 
 instance FromJSON TextMessage where
     parseJSON :: Value -> Parser TextMessage
     parseJSON = withObject "TextMessage" $ \v -> TextMessage
-        <$> v .: "id" 
+        <$> v .: "id"
         <*> v .: "text"
 
 instance FromJSON FileInfo where
@@ -150,8 +175,9 @@ instance FromJSON FileMessage where
     parseJSON = withObject "FileMessage" $ \v -> FileMessage
         <$> v .: "fileInfo"
 
--- | Custom parser for the polymorphic MessageObject.
---   It checks the "type" field to decide how to parse the rest of the object.
+-- | Custom parser for the polymorphic 'MessageObject'.
+--   It checks the "type" field in the JSON to decide which specific
+--   message constructor to use for parsing.
 instance FromJSON MessageObject where
     parseJSON :: Value -> Parser MessageObject
     parseJSON = withObject "MessageObject" $ \v -> do
