@@ -6,12 +6,14 @@ cabal-version: 2.2
 
 name:           taipeion-api
 version:        0.1.0.0
+synopsis:       Library for TaipeiON message API
 description:    Please see the README on GitHub at <https://github.com/h-alice/taipeion-message-api#readme>
+category:       Api
 homepage:       https://github.com/h-alice/taipeion-message-api#readme
 bug-reports:    https://github.com/h-alice/taipeion-message-api/issues
 author:         h-alice
 maintainer:     admin@halice.art
-copyright:      2025 Wayne 'h-alice' Hong
+copyright:      2025 Wayne Hong (h-alice)
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple

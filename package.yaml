@@ -4,15 +4,15 @@ github:              "h-alice/taipeion-message-api"
 license:             BSD-3-Clause
 author:              "h-alice"
 maintainer:          "admin@halice.art"
-copyright:           "2025 Wayne 'h-alice' Hong"
+copyright:           "2025 Wayne Hong (h-alice)"
 
 extra-source-files:
 - README.md
 - CHANGELOG.md
 
-# Metadata used when publishing your package
-# synopsis:            Library for TaipeiON message API
-# category:            Web
+
+synopsis:            Library for TaipeiON message API
+category:            Api
 
 description:         Please see the README on GitHub at <https://github.com/h-alice/taipeion-message-api#readme>
 
@@ -42,17 +42,6 @@ ghc-options:
 
 library:
   source-dirs: src
-
-#executables:
-#  taipeion-api-exe:
-#    main:                Main.hs
-#    source-dirs:         app
-#    ghc-options:
-#    - -threaded
-#    - -rtsopts
-#    - -with-rtsopts=-N
-#    dependencies:
-#    - taipeion-api
 
 tests:
   taipeion-api-test:
