@@ -8,8 +8,9 @@ copyright:           "2025 Wayne Hong (h-alice)"
 
 extra-source-files:
 - README.md
-- CHANGELOG.md
 
+extra-doc-files:
+- CHANGELOG.md
 
 synopsis:            Library for TaipeiON message API
 category:            Api

@@ -67,7 +67,7 @@ data ResponseSendMessage = ResponseSendMessage
 
 -- | Represents the successful response from uploading a file.
 data ResponseUploadFile = ResponseUploadFile
-  { resFileID :: String -- ^ The unique identifier for the uploaded file.
+  { resFileID :: Text -- ^ The unique identifier for the uploaded file.
   } deriving (Show, Eq)
 
 -- | Represents a general, unparsed HTTP response. This is used as a fallback
