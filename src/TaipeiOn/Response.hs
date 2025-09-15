@@ -32,6 +32,7 @@ module TaipeiOn.Response
       ResponseSendMessage(..)
     , ResponseUploadFile(..)
     , ResponseReadCount(..)
+    , ResponseGeneral(..)
     , ResponseError(..)
     , ReadDetail(..)
 
