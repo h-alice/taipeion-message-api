@@ -11,6 +11,7 @@ extra-source-files:
 
 extra-doc-files:
 - CHANGELOG.md
+- GUIDE.md
 
 synopsis:            Library for TaipeiON message API
 category:            Api
