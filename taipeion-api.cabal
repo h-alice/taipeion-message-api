@@ -21,6 +21,7 @@ extra-source-files:
     README.md
 extra-doc-files:
     CHANGELOG.md
+    GUIDE.md
 
 source-repository head
   type: git
