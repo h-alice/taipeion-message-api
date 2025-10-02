@@ -11,11 +11,53 @@
 -- and for specifying API calls ('Action'), and exposes a single function,
 -- 'tpoClient', to execute requests.
 --
--- Tips for development
+-- Tips for development:
 --
 -- If you want to add more client actions, define the actio in `data Action`
 -- section first. Then add the corresponding request generating strategy
 -- at `mkTpoRequest`. And finally, update the `tpoClient`.
+--
+-- === __Example__
+--
+-- @
+-- import TaipeiOn.Client
+-- import TaipeiOn.Message
+-- import TaipeiOn.Response
+-- import Data.Text
+--
+-- endpoint = "https://myapi.gov.taipei/m-taipeion/MessageFeedService"
+-- apiKey = "API Platform key"
+-- channelId = 123
+-- channelSecret = "Channel Secret"
+-- channelKey = "Channel Key"
+--
+-- myChannel :: Channel
+-- myChannel = Channel
+--         { chanId = channelId
+--         , chanToken = channelKey
+--         , chanSecret = channelSecret
+--         , chanApiToken = apiKey1
+--         }
+--
+-- sendGreeting :: IO ()
+-- sendGreeting = do
+--   let message = mkTextMessage "Hello from the Haskell client!"
+--   let action = WriteChannelBroadcast myChannel message
+-- 
+--   putStrLn "Sending broadcast message..."
+--   response <- tpoClient apiEndpoint action
+-- 
+--   -- Handle the response
+--   case response of
+--     SendMessage smResp ->
+--       putStrLn $ "Message sent successfully! MessageSN: " ++ show (resMessageSN smResp)
+--     ErrorResponse errResp ->
+--       putStrLn $ "API Error: " ++ show (resErrorMessage errResp)
+--     General genResp ->
+--       putStrLn $ "Received a generic response with status: " ++ show (resStatusCode genResp)
+--     _ ->
+--       putStrLn "Received an unexpected response type."
+-- @
 --
 
 {-# LANGUAGE DeriveGeneric #-}
@@ -128,12 +170,13 @@ mkTpoRequest action req =
 --   corresponding HTTP request, and returns a 'TpoResponse' representing
 --   the parsed result.
 --
---   Example:
---   > let channel = Channel 123 "token" "secret" "api-key"
---   > let message = mkTextMessage "Hello, world!"
---   > let action = WriteChannelBroadcast channel message
---   > response <- tpoClient "https://api.endpoint.url/v1" action
---
+-- === __Example__
+-- @
+-- let channel = Channel 123 "token" "secret" "api-key"
+-- let message = mkTextMessage "Hello, world!"
+-- let action = WriteChannelBroadcast channel message
+-- response <- tpoClient "https://api.endpoint.url/v1" action
+-- @
 tpoClient :: String -> Action -> IO TpoResponse
 tpoClient endPoint action = do
 

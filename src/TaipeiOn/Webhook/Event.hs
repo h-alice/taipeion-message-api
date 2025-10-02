@@ -7,8 +7,45 @@
 -- Portability : non-portable (GHC extensions)
 --
 -- This module defines the data types for deserializing incoming webhook events
--- from the TaipeiON platform. These data structures correspond to the JSON
--- objects sent to your webhook URL when a user sends a message to your channel.
+-- from the TaipeiON platform. 
+--
+-- These data structures correspond to the JSON objects sent to your webhook URL 
+-- when a user sends a message to your channel.
+--
+-- === __Example__
+--
+-- @
+-- import qualified Data.Text as T
+-- import qualified Data.Text.Encoding as TE
+-- import qualified TaipeiOn.Webhook.Event as WE
+-- import Data.Aeson.Decoding ( eitherDecodeStrict )
+--
+-- -- Sample copied from development manual
+-- let received = [r|
+--   {
+--     "destination": 87,
+--     
+--       "events": [
+--       {
+--         "type": "message",
+--         "timestamp": 1757654321,
+--         "source": {
+--           "type": "user",
+--           "userId": "some-user-id"
+--         },
+--         "message": {
+--           "type": "text",
+--            "id": "ecca2bfd-4d57-4acb-92ed-de38ab54bad1",
+--            "text": "Hello, world!"
+--          }
+--        }
+--      ]
+--    }
+--  |] :: T.Text
+-- 
+-- putStrLn "Decode result:"
+-- print ((eitherDecodeStrict $ TE.encodeUtf8 $ T.strip received ) :: Either String WE.WebhookPayload)
+-- @
 --
 
 {-# LANGUAGE DeriveGeneric #-}
